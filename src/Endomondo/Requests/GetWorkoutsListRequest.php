@@ -7,7 +7,7 @@ use SportTools\Endomondo\EndomondoApi;
  * Class GetWorkoutsListRequest
  * @package SportTools\Endomondo\Requests
  */
-class GetWorkoutsListRequest implements ApiRequest
+class GetWorkoutsListRequest extends WorkoutRequest implements ApiRequest
 {
     /**
      * @var string
@@ -17,15 +17,69 @@ class GetWorkoutsListRequest implements ApiRequest
      * @var int
      */
     private $results = -1;
-    private $userId;
+    /**
+     * @var int
+     */
+    private $userId = -1;
+    /**
+     * @var array
+     */
+    private $fields = [self::FIELD_SIMPLE];
 
     /**
      * GetWorkoutsListRequest constructor.
      * @param string $authToken
+     * @param int $userId
      */
-    public function __construct(string $authToken)
+    public function __construct(string $authToken, int $userId)
     {
         $this->authToken = $authToken;
+        $this->userId = $userId;
+    }
+
+    /**
+     * @param string $name
+     * @return GetWorkoutsListRequest
+     * @throws \Exception
+     */
+    public function withField(string $name): GetWorkoutsListRequest
+    {
+        if (!in_array($name, self::ALLOWED_FIELDS)) {
+            // todo: nicer exception
+            throw new \Exception();
+        }
+        $this->fields[] = $name;
+        return $this;
+    }
+
+    /**
+     * @param array $fields
+     * @return GetWorkoutsListRequest
+     */
+    public function withFieldsList(array $fields): GetWorkoutsListRequest
+    {
+        foreach ($fields as $field) {
+            $this->withField($field);
+        }
+        return $this;
+    }
+
+    /**
+     * @param int $results
+     * @return GetWorkoutsListRequest
+     */
+    public function setResults(int $results): GetWorkoutsListRequest
+    {
+        $this->results = $results;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getFields(): array
+    {
+        return $this->fields;
     }
 
     /**
@@ -34,6 +88,14 @@ class GetWorkoutsListRequest implements ApiRequest
     public function getAuthToken(): string
     {
         return $this->authToken;
+    }
+
+    /**
+     * @return int
+     */
+    public function getUserId(): int
+    {
+        return $this->userId;
     }
 
     /**
@@ -60,11 +122,10 @@ class GetWorkoutsListRequest implements ApiRequest
         return [
             'authToken' => $this->getAuthToken(),
             'maxResults' => $this->getResults(),
-//            'fields' => null,
-//            'fields' => 'device,simple,basic,motivation,interval,weather,polyline_encoded_small,points,lcp_count,tagged_users,pictures',
-            'fields' => 'basic',
-            'before' => '',
-            'after' => '',
+            'userId' => $this->getUserId(),
+            'fields' => implode(',', $this->getFields()),
+//            'before' => '2016-11-05 00:00:00 UTC',
+//            'after' => '',
         ];
     }
 }

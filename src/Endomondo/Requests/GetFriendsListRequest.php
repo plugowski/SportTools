@@ -4,29 +4,23 @@ namespace SportTools\Endomondo\Requests;
 use SportTools\Endomondo\EndomondoApi;
 
 /**
- * Class GetProfileInfoRequest
+ * Class GetFriendsListRequest
  * @package SportTools\Endomondo\Requests
  */
-class GetProfileInfoRequest implements ApiRequest
+class GetFriendsListRequest implements ApiRequest
 {
     /**
      * @var string
      */
     private $authToken;
-    /**
-     * @var int
-     */
-    private $userId;
 
     /**
-     * GetProfileInfoRequest constructor.
+     * GetFriendsListRequest constructor.
      * @param string $authToken
-     * @param int $userId
      */
-    public function __construct(string $authToken, int $userId)
+    public function __construct(string $authToken)
     {
         $this->authToken = $authToken;
-        $this->userId = $userId;
     }
 
     /**
@@ -38,19 +32,11 @@ class GetProfileInfoRequest implements ApiRequest
     }
 
     /**
-     * @return int
-     */
-    public function getUserId(): int
-    {
-        return $this->userId;
-    }
-
-    /**
      * @return string
      */
     public function getEndpoint(): string
     {
-        return EndomondoApi::API_URL . EndomondoApi::URL_PROFILE_GET;
+        return EndomondoApi::API_URL . EndomondoApi::URL_FRIENDS;
     }
 
     /**
@@ -59,8 +45,7 @@ class GetProfileInfoRequest implements ApiRequest
     public function getOptions(): array
     {
         return [
-            'authToken' => $this->getAuthToken(),
-            'userId' => $this->getUserId()
+            'authToken' => $this->getAuthToken()
         ];
     }
 }

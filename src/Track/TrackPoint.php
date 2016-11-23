@@ -27,6 +27,10 @@ class TrackPoint
      * @var float
      */
     private $distance;
+    /**
+     * @var float
+     */
+    private $speed;
 
     /**
      * @param \DateTime $time

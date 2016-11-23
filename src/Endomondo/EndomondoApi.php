@@ -5,8 +5,10 @@ use GuzzleHttp\Client;
 use Ramsey\Uuid\Uuid;
 use SportTools\Endomondo\Requests\ApiRequest;
 use SportTools\Endomondo\Requests\AuthRequest;
+use SportTools\Endomondo\Requests\GetFriendsListRequest;
 use SportTools\Endomondo\Requests\GetProfileInfoRequest;
 use SportTools\Endomondo\Requests\GetWorkoutsListRequest;
+use SportTools\Endomondo\Requests\WorkoutRequest;
 
 /**
  * Class EndomondoApi
@@ -43,6 +45,8 @@ class EndomondoApi
     const DEVICE_APP_VARIANT = 'M-Pro';
     const DEVICE_USER_AGENT_PATTERN = 'Mozilla/5.0 ({device}; CPU {device_os} {device_os_version} like Mac OS X) AppleWebKit/602.1.50 (KHTML, like Gecko) CriOS/54.0.2840.91 Mobile/14B100 Safari/602.1';
 
+    const RESPONSE_NOT_FOUND = 'NOT_FOUND';
+
     /**
      * Mapper reqired to build correct User-Agent header
      */
@@ -67,6 +71,7 @@ class EndomondoApi
 
     /**
      * EndomondoApi constructor.
+     * @param Client $client
      */
     public function __construct(Client $client)
     {
@@ -76,7 +81,7 @@ class EndomondoApi
     /**
      * @param string $email
      * @param string $password
-     *
+     * @throws \Exception
      */
     public function authorize(string $email, string $password)
     {
@@ -94,15 +99,38 @@ class EndomondoApi
         $this->user = new User($response['userId'], $response['displayName']);
     }
 
-    public function getUserInfo()
+    /**
+     * @return User
+     */
+    public function getUser(): User
     {
-        $response = $this->call(new GetProfileInfoRequest($this->authToken));
-        $data = json_decode($response->getBody()->getContents());
+        return $this->user;
     }
 
-    public function getWorkoutList($maxResults = 40)
+    /**
+     * @param int $userId
+     * @return \stdClass todo: change to User object
+     */
+    public function getUserInfo(int $userId)
     {
-        $request = new GetWorkoutsListRequest($this->authToken, $maxResults);
+        $response = $this->call(new GetProfileInfoRequest($this->authToken, $userId));
+        return json_decode($response->getBody());
+    }
+
+    /**
+     * @param int $userId
+     * @param int $maxResults
+     * @return \stdClass todo: change to WorkoutCollection
+     * @throws \Exception
+     */
+    public function getWorkoutsList(int $userId, int $maxResults = 40)
+    {
+        // todo: data ranges
+        $request = (new GetWorkoutsListRequest($this->authToken, $userId))
+            ->withField(WorkoutRequest::FIELD_LCP_COUNT)
+            ->withField(WorkoutRequest::FIELD_POLYLINE_ENCODED_SMALL)
+            ->setResults($maxResults);
+
         $response = $this->call($request);
 
         if (200 !== $response->getStatusCode()) {
@@ -110,25 +138,37 @@ class EndomondoApi
             throw new \Exception();
         }
 
-        $workoutsList = $response->getBody()->getContents();
+        return json_decode($response->getBody());
     }
 
     /**
      * Return full list of friends
+     *
+     * @return array todo: change to UserCollection
+     * @throws \Exception
      */
     public function getFriendsList()
     {
-        $response = $this->call(self::URL_FRIENDS);
-        $data = explode(PHP_EOL, $response->getBody()->getContents());
+        $response = $this->call(new GetFriendsListRequest($this->authToken));
+        $data = explode(PHP_EOL, $response->getBody());
 
         if (200 !== $response->getStatusCode() || 'OK' !== array_shift($data)) {
             // todo: create nicer Exception
             throw new \Exception();
         }
 
-        // endomondo returns list in CSV in format:
-        // userId;FullName;imageId;lastWorkoutDateTime;activityName;isPremium[true/false]
+        // endomondo returns list in CSV format like:
+        // userId;FullName;imageId;lastWorkoutDateTime;activityName;isPremium[true/false];
         // https://www.endomondo.com/resources/gfx/picture/<imageId>/full.jpg
+
+        $friendsCollection = [];
+        foreach ($data as $friendRaw) {
+            if (empty($friendRaw)) {
+                continue;
+            }
+            $friendsCollection[] = explode(';', substr($friendRaw, 0, -1));
+        }
+        return $friendsCollection;
     }
 
     /**
