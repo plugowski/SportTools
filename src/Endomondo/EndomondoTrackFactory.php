@@ -12,10 +12,10 @@ use SportTools\Workout\TrackPointCollection;
 class EndomondoTrackFactory
 {
     /**
-     * @param \stdClass $data
+     * @param array $data
      * @return Track|void
      */
-    public static function createFromData(\stdClass $data): Track
+    public static function createFromData(array $data): Track
     {
         $trackPointCollection = new TrackPointCollection();
         $lastPoint = (new TrackPoint(new \DateTime($data[0]->time), $data[0]->lat, $data[0]->lng, $data[0]->alt))->setDistance(0);
