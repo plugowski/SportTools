@@ -12,7 +12,6 @@ use SportTools\Endomondo\Requests\GetWorkoutsListRequest;
 use SportTools\Endomondo\Requests\PostWorkoutRequest;
 use SportTools\Endomondo\Requests\WorkoutRequest;
 use SportTools\Workout\Id;
-use SportTools\Workout\TrackFactory;
 use SportTools\Workout\Workout;
 use SportTools\Workout\WorkoutCollection;
 
@@ -163,9 +162,7 @@ class EndomondoApi
     public function getWorkout(int $workoutId)
     {
         $request = (new GetWorkoutRequest($this->authToken, $workoutId))
-            ->withField(WorkoutRequest::FIELD_POINTS)
-            ->withField(WorkoutRequest::FIELD_FEED)
-            ->withField(WorkoutRequest::FIELD_LCP_COUNT);
+            ->withField(WorkoutRequest::FIELD_POINTS);
 
         $response = $this->call($request);
         $data = json_decode($response->getBody());
@@ -181,7 +178,7 @@ class EndomondoApi
         // todo: consider if come extra information are needed here
         $workout = new Workout(new Id($data->id), $data->distance, $data->duration, new \DateTime($data->start_time));
         if (isset($data->points)) {
-            $workout->setTrack(TrackFactory::createFromData($data->points));
+            $workout->setTrack(EndomondoTrackFactory::createFromData($data->points));
         }
 
         return $workout;
