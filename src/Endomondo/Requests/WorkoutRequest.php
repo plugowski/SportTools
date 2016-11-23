@@ -26,4 +26,66 @@ abstract class WorkoutRequest
         self::FIELD_WEATHER, self::FIELD_POLYLINE_ENCODED_SMALL, self::FIELD_POINTS, self::FIELD_LCP_COUNT,
         self::FIELD_TAGGED_USERS, self::FIELD_PICTURES, self::FIELD_HR_ZONES, self::FIELD_FEED
     ];
+
+    /**
+     * @var string
+     */
+    protected $authToken;
+    /**
+     * @var array
+     */
+    protected $fields = [self::FIELD_SIMPLE];
+
+    /**
+     * WorkoutRequest constructor.
+     * @param string $authToken
+     */
+    public function __construct(string $authToken)
+    {
+        $this->authToken = $authToken;
+    }
+
+    /**
+     * @return string
+     */
+    public function getAuthToken(): string
+    {
+        return $this->authToken;
+    }
+
+    /**
+     * @param string $name
+     * @return WorkoutRequest
+     * @throws \Exception
+     */
+    public function withField(string $name): self
+    {
+        if (!in_array($name, self::ALLOWED_FIELDS)) {
+            // todo: nicer exception
+            throw new \Exception();
+        }
+        $this->fields[] = $name;
+        return $this;
+    }
+
+    /**
+     * @param array $fields
+     * @return WorkoutRequest
+     */
+    public function withFieldsList(array $fields): self
+    {
+        foreach ($fields as $field) {
+            $this->withField($field);
+        }
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getFields(): array
+    {
+        return $this->fields;
+    }
+
 }

@@ -7,6 +7,7 @@ use SportTools\Endomondo\Requests\ApiRequest;
 use SportTools\Endomondo\Requests\AuthRequest;
 use SportTools\Endomondo\Requests\GetFriendsListRequest;
 use SportTools\Endomondo\Requests\GetProfileInfoRequest;
+use SportTools\Endomondo\Requests\GetWorkoutRequest;
 use SportTools\Endomondo\Requests\GetWorkoutsListRequest;
 use SportTools\Endomondo\Requests\WorkoutRequest;
 
@@ -140,6 +141,26 @@ class EndomondoApi
 
         return json_decode($response->getBody());
     }
+
+    /**
+     * @param int $workoutId
+     * @return \stdClass todo: change to Workout object
+     * @throws \Exception
+     */
+    public function getWorkout(int $workoutId)
+    {
+        $request = (new GetWorkoutRequest($this->authToken, $workoutId))
+            ->withField(WorkoutRequest::FIELD_LCP_COUNT);
+        $response = $this->call($request);
+
+        if (200 !== $response->getStatusCode()) {
+            // todo: create nicer Exception
+            throw new \Exception();
+        }
+
+        return json_decode($response->getBody());
+    }
+
 
     /**
      * Return full list of friends
