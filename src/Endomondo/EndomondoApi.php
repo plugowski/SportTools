@@ -9,7 +9,12 @@ use SportTools\Endomondo\Requests\GetFriendsListRequest;
 use SportTools\Endomondo\Requests\GetProfileInfoRequest;
 use SportTools\Endomondo\Requests\GetWorkoutRequest;
 use SportTools\Endomondo\Requests\GetWorkoutsListRequest;
+use SportTools\Endomondo\Requests\PostWorkoutRequest;
 use SportTools\Endomondo\Requests\WorkoutRequest;
+use SportTools\Workout\Id;
+use SportTools\Workout\TrackFactory;
+use SportTools\Workout\Workout;
+use SportTools\Workout\WorkoutCollection;
 
 /**
  * Class EndomondoApi
@@ -47,6 +52,8 @@ class EndomondoApi
     const DEVICE_USER_AGENT_PATTERN = 'Mozilla/5.0 ({device}; CPU {device_os} {device_os_version} like Mac OS X) AppleWebKit/602.1.50 (KHTML, like Gecko) CriOS/54.0.2840.91 Mobile/14B100 Safari/602.1';
 
     const RESPONSE_NOT_FOUND = 'NOT_FOUND';
+    const RESPONSE_AUTH_FAILED = 'AUTH_FAILED';
+    const RESPONSE_SC_INTERNAL_SERVER_ERROR = 'SC_INTERNAL_SERVER_ERROR';
 
     /**
      * Mapper reqired to build correct User-Agent header
@@ -121,46 +128,72 @@ class EndomondoApi
     /**
      * @param int $userId
      * @param int $maxResults
-     * @return \stdClass todo: change to WorkoutCollection
+     * @return WorkoutCollection
      * @throws \Exception
      */
     public function getWorkoutsList(int $userId, int $maxResults = 40)
     {
         // todo: data ranges
         $request = (new GetWorkoutsListRequest($this->authToken, $userId))
-            ->withField(WorkoutRequest::FIELD_LCP_COUNT)
-            ->withField(WorkoutRequest::FIELD_POLYLINE_ENCODED_SMALL)
-            ->setResults($maxResults);
+            ->setLimit($maxResults);
 
         $response = $this->call($request);
+        $data = json_decode($response->getBody());
 
         if (200 !== $response->getStatusCode()) {
             // todo: create nicer Exception
             throw new \Exception();
+        } else if (isset($data->error)) {
+            // todo: create nicer Exception
+            throw new \Exception($data->error->type);
         }
 
-        return json_decode($response->getBody());
+        $workoutCollection = new WorkoutCollection();
+        foreach ($data->data as $workout) {
+            $workoutCollection->add(new Workout(new Id($workout->id), $workout->distance, $workout->duration, new \DateTime($workout->start_time)));
+        }
+        return $workoutCollection;
     }
 
     /**
      * @param int $workoutId
-     * @return \stdClass todo: change to Workout object
+     * @return Workout
      * @throws \Exception
      */
     public function getWorkout(int $workoutId)
     {
         $request = (new GetWorkoutRequest($this->authToken, $workoutId))
+            ->withField(WorkoutRequest::FIELD_POINTS)
+            ->withField(WorkoutRequest::FIELD_FEED)
             ->withField(WorkoutRequest::FIELD_LCP_COUNT);
+
         $response = $this->call($request);
+        $data = json_decode($response->getBody());
 
         if (200 !== $response->getStatusCode()) {
             // todo: create nicer Exception
             throw new \Exception();
+        } else if (isset($data->error)) {
+            // todo: create nicer Exception
+            throw new \Exception($data->error->type);
         }
 
-        return json_decode($response->getBody());
+        // todo: consider if come extra information are needed here
+        $workout = new Workout(new Id($data->id), $data->distance, $data->duration, new \DateTime($data->start_time));
+        if (isset($data->points)) {
+            $workout->setTrack(TrackFactory::createFromData($data->points));
+        }
+
+        return $workout;
     }
 
+    /**
+     * @param Workout $workout
+     */
+    public function createWorkout(Workout $workout)
+    {
+        $request = new PostWorkoutRequest($this->authToken, $workout);
+    }
 
     /**
      * Return full list of friends

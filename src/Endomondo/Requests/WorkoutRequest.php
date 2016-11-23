@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace SportTools\Endomondo\Requests;
 
 /**
@@ -55,10 +56,10 @@ abstract class WorkoutRequest
 
     /**
      * @param string $name
-     * @return WorkoutRequest
+     * @return $this|WorkoutRequest
      * @throws \Exception
      */
-    public function withField(string $name): self
+    public function withField(string $name): WorkoutRequest
     {
         if (!in_array($name, self::ALLOWED_FIELDS)) {
             // todo: nicer exception
@@ -70,9 +71,9 @@ abstract class WorkoutRequest
 
     /**
      * @param array $fields
-     * @return WorkoutRequest
+     * @return $this|WorkoutRequest
      */
-    public function withFieldsList(array $fields): self
+    public function withFieldsList(array $fields): WorkoutRequest
     {
         foreach ($fields as $field) {
             $this->withField($field);

@@ -1,9 +1,9 @@
 <?php
-namespace SportTools\Track;
+namespace SportTools\Workout;
 
 /**
  * Class TrackPoint
- * @package SportTools\Track
+ * @package SportTools\Workout
  */
 class TrackPoint
 {
@@ -65,9 +65,9 @@ class TrackPoint
     }
 
     /**
-     * @return float|null
+     * @return float
      */
-    public function getElevation(): ?float
+    public function getElevation(): float
     {
         return $this->elevation;
     }

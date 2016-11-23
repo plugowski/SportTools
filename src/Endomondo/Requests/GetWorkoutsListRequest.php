@@ -31,9 +31,9 @@ class GetWorkoutsListRequest extends WorkoutRequest implements ApiRequest
 
     /**
      * @param int $limit
-     * @return GetWorkoutsListRequest
+     * @return $this|WorkoutRequest
      */
-    public function setLimit(int $limit): self
+    public function setLimit(int $limit): WorkoutRequest
     {
         $this->limit = $limit;
         return $this;
